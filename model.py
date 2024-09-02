@@ -80,42 +80,37 @@ class TransformerBlock(nn.Module):
 
     """
 
-    def __init__(self, model_dim, num_heads, qkv_bias, max_seq_len, dropout, ff_hidden_dim, ff_activation):
+    def __init__(self, model_dim, num_heads, qkv_bias, max_seq_len, attention_dropout, block_dropout, ff_hidden_dim, ff_activation):
         """Inizializza il transformer block.
 
         Args:
             model_dim (int): dimensione caratteristica del modello, ossia la dimensione degli embedding.
-            num_heads (_type_): numero di teste per l'attenzione.
-            qkv_bias (_type_): se True, aggiunge un termine bias alle matrici di proiezione di queries, keys e values.
-            max_seq_len (_type_): lunghezza massima delle sequenze.
-            dropout (_type_): probabilità di dropout dopo l'attenzione e dopo il feedforward.
-            ff_hidden_dim (_type_): dimensione dello strato nascosto del feedforward.
-            ff_activation (_type_): la classe della funzione di attivazione del feedforward.
+            num_heads (int): numero di teste per l'attenzione.
+            qkv_bias (bool): se True, aggiunge un termine bias alle matrici di proiezione di queries, keys e values.
+            max_seq_len (int): lunghezza massima delle sequenze.
+            attention_dropout (float): probabilità di dropout nella matrice di attenzione.
+            block_dropout (float): probabilità di dropout dopo l'attenzione e dopo il feedforward.
+            ff_hidden_dim (int): dimensione dello strato nascosto del feedforward.
+            ff_activation (Type[nn.Module]): la classe della funzione di attivazione del feedforward.
         """
         super().__init__()
-
-        self.model_dim = model_dim
-        self.num_heads = num_heads
-        self.qkv_bias = qkv_bias
-        self.max_seq_len = max_seq_len
-        self.dropout = dropout
 
         # layer normalization layers
         self.ln1 = nn.LayerNorm(model_dim)
         self.ln2 = nn.LayerNorm(model_dim)
 
         # dropout layers
-        self.dropout1 = nn.Dropout(dropout)
-        self.dropout2 = nn.Dropout(dropout)
+        self.dropout1 = nn.Dropout(block_dropout)
+        self.dropout2 = nn.Dropout(block_dropout)
 
         # multi-head attention
         self.mha = MultiHeadAttention(
             model_dim, 
             model_dim, 
-            num_heads=self.num_heads, 
-            qkv_bias=self.qkv_bias, 
-            max_seq_len=self.max_seq_len, 
-            dropout=self.dropout)
+            num_heads=num_heads, 
+            qkv_bias=qkv_bias, 
+            max_seq_len=max_seq_len, 
+            dropout=attention_dropout)
         
         # feedforward
         self.ff = nn.Sequential(
