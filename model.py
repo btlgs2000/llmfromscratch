@@ -152,3 +152,62 @@ class TransformerBlock(nn.Module):
         x += res
 
         return x
+    
+class TransformerDecoder(nn.Module):
+    """Un decoder transformer.
+    """
+
+    def __init__(self, cfg):
+        """Inizializza il decoder.
+
+        Args:
+            cfg (Dict): dizionario di configurazione.
+        """
+        super().__init__(cfg)
+
+        # token embedding
+        self.token_embedding = nn.Embedding(cfg['vocab_size'], cfg['model_dim'])
+        # positional embedding
+        self.positional_embedding = nn.Embedding(cfg['max_seq_len'], cfg['model_dim'])
+        # transformer blocks
+        self.transformer_blocks = nn.ModuleList([
+            TransformerBlock(
+                cfg['model_dim'], 
+                cfg['num_heads'], 
+                cfg['qkv_bias'], 
+                cfg['max_seq_len'], 
+                cfg['attention_dropout'], 
+                cfg['block_dropout'], 
+                cfg['ff_hidden_dim'], 
+                cfg['ff_activation']
+            ) for _ in range(cfg['num_blocks'])
+        ])
+        # layer normalization
+        self.ln = nn.LayerNorm(cfg['model_dim'])
+        # output layer
+        self.output_layer = nn.Linear(cfg['model_dim'], cfg['vocab_size'])
+
+    def forward(self, x):
+        # x: (batch_size, seq_len)
+
+        # token embedding: (batch_size, seq_len, model_dim)
+        token_embedding = self.token_embedding(x)
+        batch_size, seq_len, _ = token_embedding.size()
+
+        # positional embedding: (1, seq_len, model_dim)
+        positional_embedding = self.positional_embedding(torch.arange(seq_len, device=x.device)).unsqueeze(0)
+
+        # somma gli embedding
+        x = token_embedding + positional_embedding
+
+        # applica i transformer blocks
+        for block in self.transformer_blocks:
+            x = block(x)
+
+        # layer normalization
+        x = self.ln(x)
+
+        # output layer
+        x = self.output_layer(x)
+
+        return x
