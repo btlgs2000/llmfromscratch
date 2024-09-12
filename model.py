@@ -80,7 +80,7 @@ class TransformerBlock(nn.Module):
 
     """
 
-    def __init__(self, model_dim, num_heads, qkv_bias, max_seq_len, attention_dropout, block_dropout, ff_hidden_dim, ff_activation):
+    def __init__(self, model_dim, num_heads, qkv_bias, max_seq_len, attention_dropout, block_dropout, ff_hidden_dim):
         """Inizializza il transformer block.
 
         Args:
@@ -91,7 +91,6 @@ class TransformerBlock(nn.Module):
             attention_dropout (float): probabilità di dropout nella matrice di attenzione.
             block_dropout (float): probabilità di dropout dopo l'attenzione e dopo il feedforward.
             ff_hidden_dim (int): dimensione dello strato nascosto del feedforward.
-            ff_activation (Type[nn.Module]): la classe della funzione di attivazione del feedforward.
         """
         super().__init__()
 
@@ -115,7 +114,7 @@ class TransformerBlock(nn.Module):
         # feedforward
         self.ff = nn.Sequential(
             nn.Linear(model_dim, ff_hidden_dim),
-            ff_activation(),
+            nn.GELU(approximate="tanh"),
             nn.Linear(ff_hidden_dim, model_dim))
 
     def forward(self, x):
@@ -178,8 +177,7 @@ class TransformerDecoder(nn.Module):
                 cfg['max_seq_len'], 
                 cfg['attention_dropout'], 
                 cfg['block_dropout'], 
-                cfg['ff_hidden_dim'], 
-                cfg['ff_activation']
+                cfg['ff_hidden_dim'] 
             ) for _ in range(cfg['num_blocks'])
         ])
         # layer normalization
